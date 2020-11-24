@@ -1,0 +1,3 @@
+show advertisement ID of selected restaurant
+db.advertisement.find().pretty()
+db.advertisement.find({r_id:3},{_id:0,a_des:0,a_img:0,r_id:0}).pretty()

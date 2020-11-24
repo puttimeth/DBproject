@@ -1,0 +1,78 @@
+create database aroijang;
+
+GRANT ALL PRIVILEGES ON aroijang.* TO 'puttimeth'@'localhost';  
+FLUSH PRIVILEGES;
+
+create table deliveryman(
+	did int(5),
+	dname varchar(45) not null,
+	dphonenum varchar(10) not null,
+	dlicense varchar(10) not null,
+	dstatus bool not null default 1,
+	primary key (did)
+);
+insert into deliveryman values 
+(1,'Wichai','0855555555','AK47',1),
+(2,'Pawat','023955544','GUI47',1),
+(3,'Rock','041234785','FST2011',1),
+(4,'Akira','015248963','กข5234','1');
+
+create table customer(
+	cid int(5),
+	cname varchar(45) not null,
+	caddress varchar(125) not null,
+	cstatus bool not null default 0,
+	primary key (cid)
+);
+insert into customer values
+(2,'Nai A','ใต้สะพานลอยใกล้ร้านผัดไทย',0),
+(5,'สมชาย ศรีสวัสดี','สี่แยกไฟแดงที่ห้า',0),
+(23,'John Smith','55/55 laugh street, Texas Kitchen, 123456',0);
+
+create table ordert(
+	odid int(5),
+	cid int(5) not null,
+	did int(5) not null,
+	odstatus varchar(15) not null default 'in process',
+	primary key (odid),
+	foreign key (cid) references customer(cid),
+	foreign key (did) references deliveryman(did)
+);
+
+delimiter $$
+create function DeliveryStatus(odstatus varchar(15))
+	returns bool
+	deterministic
+begin
+	declare status bool;
+	if odstatus = 'deliver' then
+		set status = 0;
+	else
+		set status = 1;
+	end if;
+	return (status);
+end $$
+delimiter ;
+
+delimiter $$
+create procedure UpdateOrderStatus(in target_odid int(5),in new_status varchar(15))
+begin
+	update ordert set odstatus=new_status where odid=target_odid;
+	update deliveryman set dstatus=DeliveryStatus(new_status) where did=( select did from ordert O where O.odid=target_odid );
+end $$
+delimiter ;
+
+create table orderUpdateTime(
+	odid int(5),
+	new_status varchar(15) not null,
+	time datetime not null
+);
+
+delimiter $$
+create trigger orderLog
+after update on ordert
+for each row
+begin
+	insert into orderUpdateTime values (new.odid,new.odstatus,now());
+end $$
+delimiter ;
